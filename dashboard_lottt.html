@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infografía Pro Interactiva: LOTTT y Gestión Industrial</title>
+    <style>
+        /* ESTILOS BASE */
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            background-color: #f4f7f6; margin: 0; padding: 20px; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow-x: hidden; 
+        }
+        
+        .app-container { 
+            position: relative; width: 100%; max-width: 1200px; 
+            aspect-ratio: 16 / 9; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            border-radius: 12px; overflow: hidden; background-color: #fff; 
+        }
+        
+        .base-image { width: 100%; height: 100%; display: block; object-fit: cover; }
+        
+        /* CAPAS INTERACTIVAS (HOTSPOTS) */
+        .hotspot { 
+            position: absolute; background-color: rgba(255, 255, 255, 0.0); 
+            cursor: pointer; border-radius: 8px; transition: background-color 0.2s; z-index: 10; 
+        }
+        .hotspot:hover { background-color: rgba(0, 150, 136, 0.1); } 
+        
+        /* COORDENADAS DE LOS 6 BLOQUES */
+        #h1 { top: 22%; left: 1.5%; width: 31%; height: 35%; }
+        #h2 { top: 22%; left: 34.5%; width: 30.5%; height: 35%; }
+        #h3 { top: 22%; left: 67.5%; width: 31%; height: 35%; }
+        #h4 { top: 58%; left: 1.5%; width: 31%; height: 35%; }
+        #h5 { top: 58%; left: 34.5%; width: 30.5%; height: 35%; }
+        #h6 { top: 58%; left: 67.5%; width: 31%; height: 35%; }
+        
+        /* --- CLASES DE ANIMACIÓN MÁGICA (FLIP) --- */
+        #animated-overlay { 
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(8px); opacity: 0; visibility: hidden; 
+            z-index: 1000; transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+        #animated-overlay.active { opacity: 1; visibility: visible; }
+
+        .ghost-container { 
+            position: fixed; overflow: hidden; z-index: 1001; 
+            border-radius: 12px; transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1); 
+            pointer-events: none; box-shadow: 0 0 0 rgba(0,0,0,0); border: 2px solid transparent; 
+        }
+        .ghost-container.expanded { 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.25); border: 4px solid white; background-color: white; 
+        }
+        .ghost-img { position: absolute; transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1); max-width: none; }
+
+        /* --- PANEL DE TEXTO ADAPTATIVO (NUEVA ARQUITECTURA) --- */
+        #side-panel { 
+            position: fixed; 
+            top: 50%; right: 2.5vw; 
+            width: 45vw; 
+            height: auto; /* Se adapta al contenido */
+            max-height: 90vh; /* Nunca será más alto que la pantalla */
+            transform: translateY(100vh); opacity: 0; z-index: 1002; 
+            background: white; border-radius: 16px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); 
+            padding: 30px 40px; border-top: 8px solid #009688; 
+            display: flex; flex-direction: column; /* Estructura Flexbox */
+            transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+        #side-panel.active { transform: translateY(-50%); opacity: 1; }
+        
+        .close-panel { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: #888; transition: transform 0.2s; }
+        .close-panel:hover { color: #222; transform: scale(1.2); }
+        
+        .panel-header { 
+            display: flex; align-items: center; gap: 15px; 
+            margin-bottom: 15px; padding-bottom: 15px; 
+            border-bottom: 2px solid #eee; 
+            flex-shrink: 0; /* Evita que el título se encoja */
+        }
+        .panel-number { background-color: #005b9f; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; flex-shrink: 0; }
+        .panel-title { margin: 0; color: #005b9f; font-size: 24px; line-height: 1.2; }
+        
+        /* El cuerpo del texto ahora calcula su propio espacio */
+        .panel-body { 
+            flex: 1 1 auto; /* Toma el espacio sobrante y permite scroll interno */
+            overflow-y: auto; 
+            padding-right: 15px; 
+            color: #444; line-height: 1.6; font-size: 15px; 
+        }
+        
+        /* Diseño limpio de la barra de desplazamiento */
+        .panel-body::-webkit-scrollbar { width: 8px; }
+        .panel-body::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .panel-body::-webkit-scrollbar-thumb { background-color: #009688; border-radius: 4px; }
+        
+        /* Estilos del contenido interior */
+        .panel-body ul { padding-left: 20px; margin-top: 5px; }
+        .panel-body li { margin-bottom: 15px; } 
+        .panel-body p { margin-top: 0; font-weight: 500;}
+        .highlight-blue { color: #005b9f; font-weight: bold; font-size: 1.05em; }
+        .highlight-teal { color: #009688; font-weight: bold; font-size: 1.05em; }
+        .legal-quote { background-color: #f8f9fa; border-left: 4px solid #009688; padding: 12px 15px; margin: 8px 0; border-radius: 0 8px 8px 0; font-style: italic; color: #555; font-size: 0.95em; box-shadow: inset 0 0 10px rgba(0,0,0,0.02); }
+        .art-ref { display: inline-block; background-color: #e0f2f1; color: #00796b; font-size: 0.8em; font-weight: bold; padding: 3px 8px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #b2dfdb; font-style: normal; }
+
+        /* Ajustes para Teléfonos Móviles (Para que se lea bien con mucho texto) */
+        @media (max-width: 768px) { 
+            #side-panel { 
+                width: 90vw; right: 5vw; top: auto; bottom: 5vh; 
+                transform: translateY(150%); padding: 25px; 
+                max-height: 80vh; /* Más alto en móviles para mejor lectura */
+            } 
+            #side-panel.active { transform: translateY(0); } 
+            .panel-title { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="info-container">
+        <img src="infografia_integral_lottt.jpg" alt="Infografía Equipo Cervantes Palomino Azuaje" class="base-image" id="base-image">
+        
+        <div class="hotspot" id="h1" data-section="1"></div>
+        <div class="hotspot" id="h2" data-section="2"></div>
+        <div class="hotspot" id="h3" data-section="3"></div>
+        <div class="hotspot" id="h4" data-section="4"></div>
+        <div class="hotspot" id="h5" data-section="5"></div>
+        <div class="hotspot" id="h6" data-section="6"></div>
+    </div>
+    
+    <div id="animated-overlay"></div>
+
+    <div id="side-panel">
+        <span class="close-panel" id="close-panel">&times;</span>
+        <div class="panel-header">
+            <div class="panel-number" id="side-number">X</div>
+            <h2 class="panel-title" id="side-title">Título</h2>
+        </div>
+        <div class="panel-body" id="side-body"></div>
+    </div>
+    
+    <script>
+        // CONTENIDO DETALLADO DEL EQUIPO
+        const sectionDetails = {
+            "1": { 
+                title: "LOTTT y Calidad Total", 
+                content: `<p>La calidad de un producto o servicio industrial nace directamente de las condiciones laborales y la capacitación.</p>
+                <ul>
+                    <li><div class="art-ref">LOTTT Art. 156</div><br><span class="highlight-blue">Condiciones Dignas:</span><div class="legal-quote">"El trabajo se llevará a cabo en condiciones dignas y seguras... garantizando: a) El desarrollo físico, intelectual y moral. [...] d) El ambiente saludable..."</div> Este ambiente impacta directamente en el objetivo de "cero defectos".</li>
+                    <li><div class="art-ref">LOTTT Art. 297</div><br><span class="highlight-blue">Formación Continua:</span> La ley exige la capacitación colectiva, orientada hacia la innovación y modelos de gestión productiva.</li>
+                    <li><span class="highlight-teal">Conexión ISO 9001:</span> El cumplimiento de estos artículos sustenta directamente las cláusulas de "Competencia" y "Concienciación" de los Sistemas de Gestión de Calidad.</li>
+                </ul>` 
+            },
+            "2": { 
+                title: "Gestión del Mantenimiento", 
+                content: `<p>El mantenimiento garantiza la continuidad operativa y protege la rentabilidad de la planta.</p>
+                <ul>
+                    <li><span class="highlight-teal">Aplicación de Planes:</span><br>
+                        <strong>Preventivo:</strong> Tareas programadas basadas en tiempo o ciclos de uso.<br>
+                        <strong>Predictivo:</strong> Uso de termografía y análisis de vibraciones para detectar fallas incipientes.<br>
+                        <strong>Correctivo:</strong> Ejecución de Análisis de Causa Raíz (RCA) tras fallas no planificadas.
+                    </li>
+                    <li><div class="art-ref">Norma COVENIN 2500-93</div><br><span class="highlight-blue">Evaluación y KPIs:</span> Medición estricta de:
+                        <div class="legal-quote">
+                            <strong>MTBF:</strong> Tiempo Medio Entre Fallas (Confiabilidad).<br>
+                            <strong>MTTR:</strong> Tiempo Medio de Reparación (Mantenibilidad).<br>
+                            <strong>Disponibilidad:</strong> (MTBF / (MTBF + MTTR)) x 100.
+                        </div>
+                    </li>
+                </ul>` 
+            },
+            "3": { 
+                title: "Gestión de Activos Físicos", 
+                content: `<p>Visión integral para maximizar el valor de la maquinaria pesada industrial.</p>
+                <ul>
+                    <li><div class="art-ref">Estándar ISO 55000</div><br><span class="highlight-teal">Ciclo de Vida:</span> Estrategia alineada con los objetivos organizacionales que abarca: Planificación, Adquisición, Operación/Mantenimiento y Desincorporación.</li>
+                    <li><span class="highlight-blue">Rentabilidad vs. Desgaste:</span> Minimización del Costo del Ciclo de Vida (LCC). Implica una planificación financiera precisa para decidir el reemplazo estratégico de un equipo.</li>
+                    <li><span class="highlight-blue">Criterio de Reemplazo:</span> Se ejecuta el reemplazo oportuno justo antes de que el mantenimiento correctivo recurrente impacte la seguridad del trabajador o genere paradas críticas de producción.</li>
+                </ul>` 
+            },
+            "4": { 
+                title: "Seguridad Industrial y Prevención", 
+                content: `<p>La intersección legal obligatoria para proteger la vida en las operaciones industriales.</p>
+                <ul>
+                    <li><div class="art-ref">LOTTT Art. 43</div><br><span class="highlight-blue">Responsabilidad del Patrono:</span><div class="legal-quote">"Todo patrono o patrona garantizará a sus trabajadores o trabajadoras condiciones de seguridad, higiene y ambiente de trabajo adecuado... son responsables por los accidentes laborales y enfermedades ocupacionales."</div></li>
+                    <li><div class="art-ref">LOPCYMAT / INPSASEL</div><br><span class="highlight-teal">Mecanismos de Prevención:</span>
+                        <div class="legal-quote">
+                            - Conformación obligatoria de Comités de Seguridad y Salud Laboral.<br>
+                            - Elaboración de Mapas de Riesgos (Físicos, químicos, mecánicos).<br>
+                            - Dotación estricta de Equipos de Protección Personal (EPP) certificados.
+                        </div>
+                    </li>
+                </ul>` 
+            },
+            "5": { 
+                title: "Instalación de Plantas y Estructuras", 
+                content: `<p>Reglas de ingeniería civil y mecánica para garantizar infraestructuras sólidas.</p>
+                <ul>
+                    <li><span class="highlight-blue">Normativas Técnicas Nacionales e Internacionales:</span>
+                        <div class="legal-quote">
+                            <strong>COVENIN 1756:</strong> Diseño sismoresistente. La estructura debe disipar energía en el rango inelástico sin colapsar.<br>
+                            <strong>AISC / AWS:</strong> Códigos americanos obligatorios para el diseño, cálculo y procedimientos de soldadura de estructuras de acero.
+                        </div>
+                    </li>
+                    <li><span class="highlight-teal">Protocolos de Instalación:</span> Fases críticas que incluyen la ejecución de obras civiles, alineación y nivelación láser de maquinaria rotativa, torqueo de anclajes y pruebas de carga.</li>
+                    <li><span class="highlight-teal">Commissioning:</span> Fases de arranque (frío y caliente) para certificar la integridad antes de la entrega formal a operaciones.</li>
+                </ul>` 
+            },
+            "6": { 
+                title: "Embalaje, Desembalaje y Manejo", 
+                content: `<p>Procedimientos para salvaguardar el equipo industrial y proteger el cuerpo del operador.</p>
+                <ul>
+                    <li><span class="highlight-teal">Integridad de Equipos:</span> Aplicación de protocolos estandarizados de izado (rigging) y uso de puentes grúa. Es vital desembalar maquinaria crítica (ej. turbinas, motores) sin violar las condiciones del fabricante para no perder la garantía técnica.</li>
+                    <li><div class="art-ref">LOPCYMAT Art. 56</div><br><span class="highlight-blue">Ergonomía Industrial:</span> El marco legal exige proteger al trabajador durante el manejo manual de cargas (embalaje de productos finales).
+                        <div class="legal-quote">Aplicación de límites de peso para el levantamiento manual y ejecución de Análisis de Puesto de Trabajo (APT) para prevenir hernias y lesiones musculoesqueléticas.</div>
+                    </li>
+                </ul>` 
+            }
+        };
+
+        // LÓGICA DE ANIMACIÓN EXACTAMENTE IGUAL A LA VERSIÓN ANTERIOR
+        const baseImage = document.getElementById('base-image');
+        const hotspots = document.querySelectorAll('.hotspot');
+        const overlay = document.getElementById('animated-overlay');
+        const sidePanel = document.getElementById('side-panel');
+        const closePanelBtn = document.getElementById('close-panel');
+
+        let activeGhost = null;
+        let initialRect = null;
+        let initialImgRect = null;
+
+        hotspots.forEach(hotspot => {
+            hotspot.addEventListener('click', (e) => {
+                const sectionId = hotspot.getAttribute('data-section');
+                const data = sectionDetails[sectionId];
+                if (!data || activeGhost) return;
+
+                // Llenar datos
+                document.getElementById('side-number').textContent = sectionId;
+                document.getElementById('side-title').textContent = data.title;
+                document.getElementById('side-body').innerHTML = data.content;
+
+                // Mediciones
+                initialRect = hotspot.getBoundingClientRect();
+                initialImgRect = baseImage.getBoundingClientRect();
+
+                // Activar overlay
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden'; 
+
+                // Crear Ghost
+                activeGhost = document.createElement('div');
+                activeGhost.className = 'ghost-container';
+                activeGhost.style.top = initialRect.top + 'px';
+                activeGhost.style.left = initialRect.left + 'px';
+                activeGhost.style.width = initialRect.width + 'px';
+                activeGhost.style.height = initialRect.height + 'px';
+
+                const ghostImg = document.createElement('img');
+                ghostImg.src = 'infografia_integral_lottt.jpg'; // ASEGÚRATE DE QUE ESTE NOMBRE SEA TU IMAGEN ACTUAL
+                ghostImg.className = 'ghost-img';
+                
+                ghostImg.style.top = -(initialRect.top - initialImgRect.top) + 'px';
+                ghostImg.style.left = -(initialRect.left - initialImgRect.left) + 'px';
+                ghostImg.style.width = initialImgRect.width + 'px';
+                ghostImg.style.height = initialImgRect.height + 'px';
+
+                activeGhost.appendChild(ghostImg);
+                document.body.appendChild(activeGhost);
+                activeGhost.offsetHeight; // Forzar render
+
+                // Destino del Ghost
+                const isMobile = window.innerWidth < 768;
+                let targetWidth, targetHeight, targetTop, targetLeft, scaleMultiplier;
+
+                if (isMobile) {
+                    targetWidth = window.innerWidth * 0.9;
+                    scaleMultiplier = targetWidth / initialRect.width;
+                    targetHeight = initialRect.height * scaleMultiplier;
+                    targetLeft = window.innerWidth * 0.05;
+                    targetTop = 20; 
+                } else {
+                    targetWidth = window.innerWidth * 0.38; 
+                    scaleMultiplier = targetWidth / initialRect.width;
+                    targetHeight = initialRect.height * scaleMultiplier;
+                    targetLeft = window.innerWidth * 0.08; 
+                    targetTop = (window.innerHeight - targetHeight) / 2; 
+                }
+
+                activeGhost.classList.add('expanded');
+                activeGhost.style.top = targetTop + 'px';
+                activeGhost.style.left = targetLeft + 'px';
+                activeGhost.style.width = targetWidth + 'px';
+                activeGhost.style.height = targetHeight + 'px';
+
+                ghostImg.style.top = (-(initialRect.top - initialImgRect.top) * scaleMultiplier) + 'px';
+                ghostImg.style.left = (-(initialRect.left - initialImgRect.left) * scaleMultiplier) + 'px';
+                ghostImg.style.width = (initialImgRect.width * scaleMultiplier) + 'px';
+                ghostImg.style.height = (initialImgRect.height * scaleMultiplier) + 'px';
+
+                // Mostrar Panel
+                sidePanel.classList.add('active');
+            });
+        });
+
+        const closePanel = () => {
+            if (!activeGhost) return;
+
+            overlay.classList.remove('active');
+            sidePanel.classList.remove('active');
+            document.body.style.overflow = '';
+
+            activeGhost.classList.remove('expanded');
+            activeGhost.style.top = initialRect.top + 'px';
+            activeGhost.style.left = initialRect.left + 'px';
+            activeGhost.style.width = initialRect.width + 'px';
+            activeGhost.style.height = initialRect.height + 'px';
+
+            const ghostImg = activeGhost.querySelector('img');
+            ghostImg.style.top = -(initialRect.top - initialImgRect.top) + 'px';
+            ghostImg.style.left = -(initialRect.left - initialImgRect.left) + 'px';
+            ghostImg.style.width = initialImgRect.width + 'px';
+            ghostImg.style.height = initialImgRect.height + 'px';
+
+            const currentGhost = activeGhost;
+            activeGhost = null; 
+            setTimeout(() => {
+                if (currentGhost && currentGhost.parentNode) {
+                    currentGhost.parentNode.removeChild(currentGhost);
+                }
+            }, 700); 
+        };
+
+        closePanelBtn.addEventListener('click', closePanel);
+        overlay.addEventListener('click', closePanel);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+        window.addEventListener('resize', () => { if (activeGhost) closePanel(); });
+    </script>
+</body>
+</html>
